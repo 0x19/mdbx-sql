@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/0x19/mdbx-sql/parser"
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"
 	"log"
 	"testing"
@@ -14,6 +15,14 @@ type User struct {
 	ID   int
 	Name string
 	Age  int
+}
+
+func (u *User) Marshal() ([]byte, error) {
+	return json.Marshal(u)
+}
+
+func (u *User) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, u)
 }
 
 func TestParserAndDatabase(t *testing.T) {
@@ -30,7 +39,7 @@ func TestParserAndDatabase(t *testing.T) {
 
 	// Test MDBX Database Operations
 	ctx := context.Background()
-	db, err := NewDb(ctx, "./testdb")
+	db, err := NewDb(ctx, "testdb")
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -38,7 +47,7 @@ func TestParserAndDatabase(t *testing.T) {
 	userTable := schema.CreateTable("users", "ID")
 
 	// Test Insert
-	user := User{ID: 1, Name: "John Doe", Age: 30}
+	user := &User{ID: 1, Name: "John Doe", Age: 30}
 	start = time.Now()
 	err = Insert(userTable, user)
 	require.NoError(t, err)
@@ -46,7 +55,8 @@ func TestParserAndDatabase(t *testing.T) {
 
 	// Test Get
 	start = time.Now()
-	retrievedUser, err := Get[User](userTable, 1)
+	retrievedUser := &User{}
+	err = Get(userTable, 1, retrievedUser)
 	require.NoError(t, err)
 	require.Equal(t, user, retrievedUser)
 	log.Printf("Get operation completed in %v", time.Since(start))
@@ -60,7 +70,8 @@ func TestParserAndDatabase(t *testing.T) {
 	log.Printf("Update operation completed in %v", time.Since(start))
 
 	start = time.Now()
-	retrievedUser, err = Get[User](userTable, 1)
+	retrievedUser = &User{}
+	err = Get(userTable, 1, retrievedUser)
 	require.NoError(t, err)
 	require.Equal(t, 31, retrievedUser.Age)
 	log.Printf("Get operation (post-update) completed in %v", time.Since(start))
@@ -73,7 +84,8 @@ func TestParserAndDatabase(t *testing.T) {
 	log.Printf("Delete operation completed in %v", time.Since(start))
 
 	start = time.Now()
-	_, err = Get[User](userTable, 1)
+	retrievedUser = &User{}
+	err = Get(userTable, 1, retrievedUser)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
 	log.Printf("Get operation (post-delete) completed in %v", time.Since(start))

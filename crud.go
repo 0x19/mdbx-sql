@@ -6,14 +6,14 @@ import (
 	"reflect"
 )
 
-func Insert[T any](table *Table, record T) error {
-	primaryKey := reflect.ValueOf(record).FieldByName(table.Primary).Interface()
+func Insert(table *Table, record Model) error {
+	primaryKey := reflect.ValueOf(record).Elem().FieldByName(table.Primary).Interface()
 	key, err := json.Marshal(primaryKey)
 	if err != nil {
 		return err
 	}
 
-	value, err := json.Marshal(record)
+	value, err := record.Marshal()
 	if err != nil {
 		return err
 	}
@@ -23,14 +23,14 @@ func Insert[T any](table *Table, record T) error {
 	})
 }
 
-func Update[T any](table *Table, record T) error {
-	primaryKey := reflect.ValueOf(record).FieldByName(table.Primary).Interface()
+func Update(table *Table, record Model) error {
+	primaryKey := reflect.ValueOf(record).Elem().FieldByName(table.Primary).Interface()
 	key, err := json.Marshal(primaryKey)
 	if err != nil {
 		return err
 	}
 
-	value, err := json.Marshal(record)
+	value, err := record.Marshal()
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func Update[T any](table *Table, record T) error {
 	})
 }
 
-func Delete[T any](table *Table, primaryKey T) error {
+func Delete(table *Table, primaryKey interface{}) error {
 	key, err := json.Marshal(primaryKey)
 	if err != nil {
 		return err
@@ -51,11 +51,10 @@ func Delete[T any](table *Table, primaryKey T) error {
 	})
 }
 
-func Get[T any](table *Table, primaryKey any) (T, error) {
+func Get(table *Table, primaryKey interface{}, record Model) error {
 	key, err := json.Marshal(primaryKey)
 	if err != nil {
-		var zero T
-		return zero, err
+		return err
 	}
 
 	var value []byte
@@ -65,16 +64,8 @@ func Get[T any](table *Table, primaryKey any) (T, error) {
 	})
 
 	if err != nil {
-		var zero T
-		return zero, err
+		return err
 	}
 
-	var record T
-	err = json.Unmarshal(value, &record)
-	if err != nil {
-		var zero T
-		return zero, err
-	}
-
-	return record, nil
+	return record.Unmarshal(value)
 }
