@@ -34,3 +34,30 @@ PASS
 coverage: 85.5% of statements
 ok  	github.com/0x19/mdbx-sql	0.029s	coverage: 85.5% of statements
 ```
+
+Using capnp
+
+```
+go clean -testcache && go test ./... -v -cover
+	github.com/0x19/mdbx-sql/parser		coverage: 0.0% of statements
+=== RUN   TestParserAndDatabase
+2024/07/07 23:11:56 SQL Parsing completed in 113.922µs
+2024/07/07 23:11:56 AST: &{Columns:[name age] TableName:users Condition:active}
+2024/07/07 23:11:56 Insert operation completed in 2.507027ms
+2024/07/07 23:11:56 Get operation completed in 94.483µs
+2024/07/07 23:11:56 Retrieved User: &{ID:1 Name:John Doe Age:30}
+2024/07/07 23:11:56 Update operation completed in 4.273583ms
+2024/07/07 23:11:56 Get operation (post-update) completed in 7.501µs
+2024/07/07 23:11:56 Updated User: &{ID:1 Name:John Doe Age:31}
+2024/07/07 23:11:56 Delete operation completed in 3.173874ms
+2024/07/07 23:11:56 Get operation (post-delete) completed in 4.41µs
+--- PASS: TestParserAndDatabase (0.01s)
+=== RUN   TestPlayground
+AST: &{Columns:[name age] TableName:users Condition:active} in 58.042µs 
+--- PASS: TestPlayground (0.00s)
+PASS
+coverage: 77.5% of statements
+ok  	github.com/0x19/mdbx-sql	0.023s	coverage: 77.5% of statements
+```
+
+Well I've screwed something up as json cannot be faster by any means then capnp....

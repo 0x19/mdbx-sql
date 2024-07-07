@@ -1,14 +1,29 @@
 package mdbxsql
 
 import (
-	"encoding/json"
+	"errors"
 	"github.com/erigontech/mdbx-go/mdbx"
-	"reflect"
+	"strconv"
 )
 
+func getKeyValue(primaryKey interface{}) ([]byte, error) {
+	switch v := primaryKey.(type) {
+	case int:
+		return []byte(strconv.Itoa(v)), nil
+	case int32:
+		return []byte(strconv.FormatInt(int64(v), 10)), nil
+	case int64:
+		return []byte(strconv.FormatInt(v, 10)), nil
+	case string:
+		return []byte(v), nil
+	default:
+		return nil, errors.New("unsupported key type")
+	}
+}
+
 func Insert(table *Table, record Model) error {
-	primaryKey := reflect.ValueOf(record).Elem().FieldByName(table.Primary).Interface()
-	key, err := json.Marshal(primaryKey)
+	primaryKey := record.PrimaryKey()
+	key, err := getKeyValue(primaryKey)
 	if err != nil {
 		return err
 	}
@@ -24,8 +39,8 @@ func Insert(table *Table, record Model) error {
 }
 
 func Update(table *Table, record Model) error {
-	primaryKey := reflect.ValueOf(record).Elem().FieldByName(table.Primary).Interface()
-	key, err := json.Marshal(primaryKey)
+	primaryKey := record.PrimaryKey()
+	key, err := getKeyValue(primaryKey)
 	if err != nil {
 		return err
 	}
@@ -41,7 +56,7 @@ func Update(table *Table, record Model) error {
 }
 
 func Delete(table *Table, primaryKey interface{}) error {
-	key, err := json.Marshal(primaryKey)
+	key, err := getKeyValue(primaryKey)
 	if err != nil {
 		return err
 	}
@@ -52,7 +67,7 @@ func Delete(table *Table, primaryKey interface{}) error {
 }
 
 func Get(table *Table, primaryKey interface{}, record Model) error {
-	key, err := json.Marshal(primaryKey)
+	key, err := getKeyValue(primaryKey)
 	if err != nil {
 		return err
 	}

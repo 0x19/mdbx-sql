@@ -1,28 +1,70 @@
 package mdbxsql
 
 import (
+	"bytes"
+	"capnproto.org/go/capnp/v3"
 	"context"
 	"fmt"
 	"github.com/0x19/mdbx-sql/parser"
-	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"
 	"log"
 	"testing"
 	"time"
 )
 
-type User struct {
-	ID   int
+type UserGo struct {
+	ID   int32
 	Name string
-	Age  int
+	Age  int32
 }
 
-func (u *User) Marshal() ([]byte, error) {
-	return json.Marshal(u)
+func (u *UserGo) PrimaryKey() interface{} {
+	return u.ID
 }
 
-func (u *User) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, u)
+func (u *UserGo) Marshal() ([]byte, error) {
+	msg, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
+	if err != nil {
+		return nil, err
+	}
+
+	userCapnp, err := NewRootUser(seg)
+	if err != nil {
+		return nil, err
+	}
+
+	userCapnp.SetId(u.ID)
+	userCapnp.SetName(u.Name)
+	userCapnp.SetAge(u.Age)
+
+	buf := new(bytes.Buffer)
+	err = capnp.NewEncoder(buf).Encode(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (u *UserGo) Unmarshal(data []byte) error {
+	msg, err := capnp.NewDecoder(bytes.NewBuffer(data)).Decode()
+	if err != nil {
+		return err
+	}
+
+	userCapnp, err := ReadRootUser(msg)
+	if err != nil {
+		return err
+	}
+
+	u.ID = userCapnp.Id()
+	u.Name, err = userCapnp.Name()
+	if err != nil {
+		return err
+	}
+	u.Age = userCapnp.Age()
+
+	return nil
 }
 
 func TestParserAndDatabase(t *testing.T) {
@@ -47,7 +89,7 @@ func TestParserAndDatabase(t *testing.T) {
 	userTable := schema.CreateTable("users", "ID")
 
 	// Test Insert
-	user := &User{ID: 1, Name: "John Doe", Age: 30}
+	user := &UserGo{ID: 1, Name: "John Doe", Age: 30}
 	start = time.Now()
 	err = Insert(userTable, user)
 	require.NoError(t, err)
@@ -55,7 +97,7 @@ func TestParserAndDatabase(t *testing.T) {
 
 	// Test Get
 	start = time.Now()
-	retrievedUser := &User{}
+	retrievedUser := &UserGo{}
 	err = Get(userTable, 1, retrievedUser)
 	require.NoError(t, err)
 	require.Equal(t, user, retrievedUser)
@@ -70,10 +112,10 @@ func TestParserAndDatabase(t *testing.T) {
 	log.Printf("Update operation completed in %v", time.Since(start))
 
 	start = time.Now()
-	retrievedUser = &User{}
+	retrievedUser = &UserGo{}
 	err = Get(userTable, 1, retrievedUser)
 	require.NoError(t, err)
-	require.Equal(t, 31, retrievedUser.Age)
+	require.Equal(t, int32(31), retrievedUser.Age)
 	log.Printf("Get operation (post-update) completed in %v", time.Since(start))
 	log.Printf("Updated User: %+v", retrievedUser)
 
@@ -84,7 +126,7 @@ func TestParserAndDatabase(t *testing.T) {
 	log.Printf("Delete operation completed in %v", time.Since(start))
 
 	start = time.Now()
-	retrievedUser = &User{}
+	retrievedUser = &UserGo{}
 	err = Get(userTable, 1, retrievedUser)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
