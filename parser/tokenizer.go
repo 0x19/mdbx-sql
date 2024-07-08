@@ -9,16 +9,26 @@ const (
 	EOF
 	WS
 	IDENT
+	NUMBER
 	COMMA
 	SELECT
 	FROM
 	WHERE
+	EQ
+	AND
 )
 
 // Token represents a lexical token.
 type Token struct {
 	Type    TokenType
 	Literal string
+}
+
+var keywords = map[string]TokenType{
+	"SELECT": SELECT,
+	"FROM":   FROM,
+	"WHERE":  WHERE,
+	"AND":    AND,
 }
 
 var tokenPool = sync.Pool{

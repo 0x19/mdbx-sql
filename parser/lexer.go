@@ -35,6 +35,8 @@ func (l *Lexer) NextToken() Token {
 	switch l.ch {
 	case ',':
 		tok = newToken(COMMA, l.ch)
+	case '=':
+		tok = newToken(EQ, l.ch)
 	case 0:
 		tok.Literal = ""
 		tok.Type = EOF
@@ -42,6 +44,10 @@ func (l *Lexer) NextToken() Token {
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
 			tok.Type = lookupIdent(tok.Literal)
+			return tok
+		} else if isDigit(l.ch) {
+			tok.Type = NUMBER
+			tok.Literal = l.readNumber()
 			return tok
 		} else {
 			tok = newToken(ILLEGAL, l.ch)
@@ -55,6 +61,14 @@ func (l *Lexer) NextToken() Token {
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 	for isLetter(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readNumber() string {
+	position := l.position
+	for isDigit(l.ch) {
 		l.readChar()
 	}
 	return l.input[position:l.position]

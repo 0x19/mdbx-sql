@@ -4,9 +4,15 @@ package parser
 type Node interface{}
 
 type SelectStatement struct {
-	Columns   []string
-	TableName string
-	Condition string
+	Columns    []string
+	TableName  string
+	Conditions []Condition
+}
+
+type Condition struct {
+	Field string
+	Op    string
+	Value string
 }
 
 // Parser represents a parser for SQL.
@@ -58,8 +64,7 @@ func (p *Parser) parseSelectStatement() *SelectStatement {
 
 	if p.curToken.Type == WHERE {
 		p.nextToken()
-		stmt.Condition = p.curToken.Literal
-		p.nextToken()
+		stmt.Conditions = p.parseConditions()
 	}
 
 	return stmt
@@ -77,4 +82,43 @@ func (p *Parser) parseColumnList() []string {
 
 	p.nextToken()
 	return columns
+}
+
+func (p *Parser) parseConditions() []Condition {
+	conditions := []Condition{}
+
+	for {
+		cond := Condition{}
+
+		if p.curToken.Type != IDENT {
+			return nil
+		}
+		cond.Field = p.curToken.Literal
+
+		p.nextToken()
+
+		if p.curToken.Type != EQ {
+			return nil
+		}
+		cond.Op = p.curToken.Literal
+
+		p.nextToken()
+
+		if p.curToken.Type != IDENT && p.curToken.Type != NUMBER {
+			return nil
+		}
+		cond.Value = p.curToken.Literal
+
+		conditions = append(conditions, cond)
+
+		p.nextToken()
+
+		if p.curToken.Type != AND {
+			break
+		}
+
+		p.nextToken()
+	}
+
+	return conditions
 }
