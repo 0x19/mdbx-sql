@@ -1,14 +1,18 @@
 package mdbxsql
 
 import (
+	"fmt"
 	"github.com/erigontech/mdbx-go/mdbx"
+	"time"
 )
 
 func Insert(table *Table, record Model) error {
+	start := time.Now()
 	value, err := record.Marshal()
 	if err != nil {
 		return err
 	}
+	fmt.Println("Time taken:", time.Since(start))
 
 	return table.db.env.Update(func(txn *mdbx.Txn) error {
 		return txn.Put(table.db.dbi, record.PrimaryKey(), value, 0)
@@ -32,19 +36,4 @@ func Delete(table *Table, primaryKey []byte) error {
 	return table.db.env.Update(func(txn *mdbx.Txn) error {
 		return txn.Del(table.db.dbi, primaryKey, nil)
 	})
-}
-
-func Get(table *Table, primaryKey []byte, record Model) error {
-	var value []byte
-	var err error
-	err = table.db.env.View(func(txn *mdbx.Txn) error {
-		value, err = txn.Get(table.db.dbi, primaryKey)
-		return err
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return record.Unmarshal(value)
 }

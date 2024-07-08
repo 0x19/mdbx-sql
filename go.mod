@@ -15,6 +15,8 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/ianlancetaylor/cgosymbolizer v0.0.0-20240503222823-736c933a666d // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

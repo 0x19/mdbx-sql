@@ -17,7 +17,7 @@ func NewDb(ctx context.Context, path string, maxDBs uint64) (*Db, error) {
 		return nil, err
 	}
 
-	err = env.SetGeometry(-1, -1, 1024*1024*1024*1024, -1, -1, 4096)
+	err = env.SetGeometry(-1, -1, 1024*1024*1024*1024, -1, -1, 8192)
 	if err != nil {
 		return nil, err
 	}

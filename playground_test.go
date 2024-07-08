@@ -2,12 +2,12 @@ package mdbxsql
 
 import (
 	"bytes"
-	"capnproto.org/go/capnp/v3"
 	"context"
 	"fmt"
 	"github.com/0x19/mdbx-sql/parser"
 	"github.com/golang/snappy"
 	"github.com/stretchr/testify/require"
+	"github.com/vmihailenco/msgpack/v5"
 	"log"
 	"strconv"
 	"testing"
@@ -15,9 +15,9 @@ import (
 )
 
 type UserGo struct {
-	ID   int32
-	Name string
-	Age  int32
+	ID   int32  `msgpack:"id"`
+	Name string `msgpack:"name"`
+	Age  int32  `msgpack:"age"`
 }
 
 func (u *UserGo) PrimaryKey() []byte {
@@ -25,26 +25,9 @@ func (u *UserGo) PrimaryKey() []byte {
 }
 
 func (u *UserGo) Marshal() ([]byte, error) {
-	msg, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
-	if err != nil {
-		return nil, err
-	}
-
-	userCapnp, err := NewRootUser(seg)
-	if err != nil {
-		return nil, err
-	}
-
-	userCapnp.SetId(u.ID)
-
-	if err := userCapnp.SetName(u.Name); err != nil {
-		return nil, err
-	}
-
-	userCapnp.SetAge(u.Age)
-
-	buf := new(bytes.Buffer)
-	err = capnp.NewEncoder(buf).Encode(msg)
+	var buf bytes.Buffer
+	encoder := msgpack.NewEncoder(&buf)
+	err := encoder.Encode(u)
 	if err != nil {
 		return nil, err
 	}
@@ -59,22 +42,11 @@ func (u *UserGo) Unmarshal(data []byte) error {
 		return err
 	}
 
-	msg, err := capnp.NewDecoder(bytes.NewBuffer(decompressed)).Decode()
+	decoder := msgpack.NewDecoder(bytes.NewBuffer(decompressed))
+	err = decoder.Decode(u)
 	if err != nil {
 		return err
 	}
-
-	userCapnp, err := ReadRootUser(msg)
-	if err != nil {
-		return err
-	}
-
-	u.ID = userCapnp.Id()
-	u.Name, err = userCapnp.Name()
-	if err != nil {
-		return err
-	}
-	u.Age = userCapnp.Age()
 
 	return nil
 }
@@ -104,8 +76,8 @@ func TestParserAndDatabase(t *testing.T) {
 	user := &UserGo{ID: 1, Name: "John Doe", Age: 30}
 	start = time.Now()
 	err = Insert(userTable, user)
-	require.NoError(t, err)
 	log.Printf("Insert operation completed in %v", time.Since(start))
+	require.NoError(t, err)
 
 	// Test Get
 	start = time.Now()
