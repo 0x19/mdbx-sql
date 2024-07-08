@@ -5,13 +5,6 @@ import (
 	"github.com/erigontech/mdbx-go/mdbx"
 )
 
-type Table struct {
-	Name    string
-	Primary string
-	db      *Db
-	dbi     mdbx.DBI
-}
-
 type Schema struct {
 	tables map[string]*Table
 	db     *Db
@@ -56,3 +49,41 @@ func (s *Schema) GetTable(name string) (*Table, error) {
 	}
 	return table, nil
 }
+
+/*func (s *Schema) ExecuteQuery(query string) (interface{}, error) {
+	lexer := parser.NewLexer(query)
+	p := parser.NewParser(lexer)
+	stmt := p.Parse().(*parser.SelectStatement)
+
+	// Fetch data from the main table
+	mainTable, err := s.GetTable(stmt.TableName)
+	if err != nil {
+		return nil, err
+	}
+	mainData, err := mainTable.fetchData(stmt.Conditions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply joins
+	for _, join := range stmt.Joins {
+		joinTable, err := s.GetTable(join.Table)
+		if err != nil {
+			return nil, err
+		}
+		joinData, err := joinTable.fetchData(nil)
+		if err != nil {
+			return nil, err
+		}
+		mainData = applyJoin(mainData, joinData, join.OnField1, join.OnField2)
+	}
+
+	// Apply aggregates
+	results := mainData
+	for _, aggregate := range stmt.Aggregates {
+		results = applyAggregate(results, aggregate)
+	}
+
+	return results, nil
+}
+*/

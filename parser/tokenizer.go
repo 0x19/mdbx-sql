@@ -15,7 +15,24 @@ const (
 	FROM
 	WHERE
 	EQ
+	GT  // Greater Than
+	LT  // Less Than
+	GTE // Greater Than or Equal To
+	LTE // Less Than or Equal To
+	NEQ // Not Equal To
 	AND
+	INSERT
+	INTO
+	VALUES
+	UPDATE
+	SET
+	DELETE
+	LPAREN
+	RPAREN
+	JOIN
+	ON
+	SUM
+	ASTERISK
 )
 
 // Token represents a lexical token.
@@ -29,6 +46,15 @@ var keywords = map[string]TokenType{
 	"FROM":   FROM,
 	"WHERE":  WHERE,
 	"AND":    AND,
+	"INSERT": INSERT,
+	"INTO":   INTO,
+	"VALUES": VALUES,
+	"UPDATE": UPDATE,
+	"SET":    SET,
+	"DELETE": DELETE,
+	"JOIN":   JOIN,
+	"ON":     ON,
+	"SUM":    SUM,
 }
 
 var tokenPool = sync.Pool{

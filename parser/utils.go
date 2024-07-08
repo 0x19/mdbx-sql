@@ -5,7 +5,7 @@ import (
 )
 
 func isLetter(ch byte) bool {
-	return unicode.IsLetter(rune(ch))
+	return unicode.IsLetter(rune(ch)) || ch == '_'
 }
 
 func isDigit(ch byte) bool {
