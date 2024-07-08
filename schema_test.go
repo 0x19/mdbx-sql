@@ -8,6 +8,7 @@ import (
 	"github.com/0x19/mdbx-sql/parser"
 	"github.com/stretchr/testify/require"
 	"log"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -18,8 +19,8 @@ type UserGo struct {
 	Age  int32
 }
 
-func (u *UserGo) PrimaryKey() interface{} {
-	return u.ID
+func (u *UserGo) PrimaryKey() []byte {
+	return []byte(strconv.FormatInt(int64(u.ID), 10))
 }
 
 func (u *UserGo) Marshal() ([]byte, error) {
@@ -34,7 +35,11 @@ func (u *UserGo) Marshal() ([]byte, error) {
 	}
 
 	userCapnp.SetId(u.ID)
-	userCapnp.SetName(u.Name)
+
+	if err := userCapnp.SetName(u.Name); err != nil {
+		return nil, err
+	}
+
 	userCapnp.SetAge(u.Age)
 
 	buf := new(bytes.Buffer)
@@ -74,8 +79,7 @@ func TestParserAndDatabase(t *testing.T) {
 	lexer := parser.NewLexer(input)
 	ddl := parser.NewParser(lexer)
 
-	ast, err := ddl.Parse()
-	require.NoError(t, err)
+	ast := ddl.Parse()
 	log.Printf("SQL Parsing completed in %v", time.Since(start))
 	log.Printf("AST: %+v", ast)
 
@@ -98,7 +102,7 @@ func TestParserAndDatabase(t *testing.T) {
 	// Test Get
 	start = time.Now()
 	retrievedUser := &UserGo{}
-	err = Get(userTable, 1, retrievedUser)
+	err = Get(userTable, []byte(strconv.FormatInt(1, 10)), retrievedUser)
 	require.NoError(t, err)
 	require.Equal(t, user, retrievedUser)
 	log.Printf("Get operation completed in %v", time.Since(start))
@@ -113,7 +117,7 @@ func TestParserAndDatabase(t *testing.T) {
 
 	start = time.Now()
 	retrievedUser = &UserGo{}
-	err = Get(userTable, 1, retrievedUser)
+	err = Get(userTable, []byte(strconv.FormatInt(1, 10)), retrievedUser)
 	require.NoError(t, err)
 	require.Equal(t, int32(31), retrievedUser.Age)
 	log.Printf("Get operation (post-update) completed in %v", time.Since(start))
@@ -121,13 +125,13 @@ func TestParserAndDatabase(t *testing.T) {
 
 	// Test Delete
 	start = time.Now()
-	err = Delete(userTable, 1)
+	err = Delete(userTable, []byte(strconv.FormatInt(1, 10)))
 	require.NoError(t, err)
 	log.Printf("Delete operation completed in %v", time.Since(start))
 
 	start = time.Now()
 	retrievedUser = &UserGo{}
-	err = Get(userTable, 1, retrievedUser)
+	err = Get(userTable, []byte(strconv.FormatInt(1, 10)), retrievedUser)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
 	log.Printf("Get operation (post-delete) completed in %v", time.Since(start))
@@ -139,23 +143,20 @@ func TestPlayground(t *testing.T) {
 	lexer := parser.NewLexer(input)
 	ddl := parser.NewParser(lexer)
 
-	ast, err := ddl.Parse()
-	require.NoError(t, err)
+	ast := ddl.Parse()
 	fmt.Printf("AST: %+v in %v \n", ast, time.Since(start))
 }
 
 func BenchmarkPlayground(b *testing.B) {
-	input := "SELECT name, age FROM users WHERE active"
-	lexer := parser.NewLexer(input)
-	ddl := parser.NewParser(lexer)
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		lexer.Init(input)
-		ddl.Init(lexer)
+		input := "SELECT name, age FROM users WHERE active"
+		lexer := parser.NewLexer(input)
+		ddl := parser.NewParser(lexer)
 		b.StartTimer()
 
-		ast, _ := ddl.Parse()
+		ast := ddl.Parse()
 		_ = ast // discard the result to focus on the performance
 	}
 }

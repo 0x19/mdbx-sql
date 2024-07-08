@@ -1,7 +1,6 @@
 package parser
 
-import "fmt"
-
+// AST Nodes
 type Node interface{}
 
 type SelectStatement struct {
@@ -10,55 +9,48 @@ type SelectStatement struct {
 	Condition string
 }
 
+// Parser represents a parser for SQL.
 type Parser struct {
 	lexer     *Lexer
-	curToken  *Token
-	peekToken *Token
+	curToken  Token
+	peekToken Token
 }
 
+// NewParser initializes a new Parser.
 func NewParser(l *Lexer) *Parser {
-	p := &Parser{}
-	p.Init(l)
+	p := &Parser{lexer: l}
+	p.nextToken()
+	p.nextToken()
 	return p
 }
 
-func (p *Parser) Init(l *Lexer) {
-	p.lexer = l
-	p.nextToken()
-	p.nextToken()
-}
-
 func (p *Parser) nextToken() {
-	if p.curToken != nil {
-		p.curToken.reset()
-		tokenPool.Put(p.curToken)
-	}
 	p.curToken = p.peekToken
 	p.peekToken = p.lexer.NextToken()
 }
 
-func (p *Parser) Parse() (Node, error) {
+func (p *Parser) Parse() Node {
 	switch p.curToken.Type {
 	case SELECT:
 		return p.parseSelectStatement()
 	default:
-		return nil, fmt.Errorf("unexpected token: %s", p.curToken.Literal)
+		return nil
 	}
 }
 
-func (p *Parser) parseSelectStatement() (*SelectStatement, error) {
+func (p *Parser) parseSelectStatement() *SelectStatement {
 	stmt := &SelectStatement{}
 
 	p.nextToken()
 	stmt.Columns = p.parseColumnList()
 
 	if p.curToken.Type != FROM {
-		return nil, fmt.Errorf("expected FROM, got %s", p.curToken.Literal)
+		return nil
 	}
 	p.nextToken()
 
 	if p.curToken.Type != IDENT {
-		return nil, fmt.Errorf("expected table name, got %s", p.curToken.Literal)
+		return nil
 	}
 	stmt.TableName = p.curToken.Literal
 
@@ -70,11 +62,11 @@ func (p *Parser) parseSelectStatement() (*SelectStatement, error) {
 		p.nextToken()
 	}
 
-	return stmt, nil
+	return stmt
 }
 
 func (p *Parser) parseColumnList() []string {
-	columns := make([]string, 0)
+	columns := []string{}
 	columns = append(columns, p.curToken.Literal)
 
 	for p.peekToken.Type == COMMA {

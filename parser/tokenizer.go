@@ -31,3 +31,7 @@ func (tok *Token) reset() {
 	tok.Type = ILLEGAL
 	tok.Literal = ""
 }
+
+func newToken(tokenType TokenType, ch byte) Token {
+	return Token{Type: tokenType, Literal: string(ch)}
+}

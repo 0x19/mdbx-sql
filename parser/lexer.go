@@ -2,6 +2,7 @@ package parser
 
 import "unicode"
 
+// Lexer represents a lexer for SQL.
 type Lexer struct {
 	input        string
 	position     int
@@ -9,17 +10,11 @@ type Lexer struct {
 	ch           byte
 }
 
+// NewLexer initializes a new Lexer.
 func NewLexer(input string) *Lexer {
-	l := &Lexer{}
-	l.Init(input)
-	return l
-}
-
-func (l *Lexer) Init(input string) {
-	l.input = input
-	l.position = 0
-	l.readPosition = 0
+	l := &Lexer{input: input}
 	l.readChar()
+	return l
 }
 
 func (l *Lexer) readChar() {
@@ -32,15 +27,14 @@ func (l *Lexer) readChar() {
 	l.readPosition++
 }
 
-func (l *Lexer) NextToken() *Token {
-	tok := tokenPool.Get().(*Token)
-	tok.reset()
+func (l *Lexer) NextToken() Token {
+	var tok Token
+
 	l.skipWhitespace()
 
 	switch l.ch {
 	case ',':
-		tok.Type = COMMA
-		tok.Literal = string(l.ch)
+		tok = newToken(COMMA, l.ch)
 	case 0:
 		tok.Literal = ""
 		tok.Type = EOF
@@ -50,8 +44,7 @@ func (l *Lexer) NextToken() *Token {
 			tok.Type = lookupIdent(tok.Literal)
 			return tok
 		} else {
-			tok.Type = ILLEGAL
-			tok.Literal = string(l.ch)
+			tok = newToken(ILLEGAL, l.ch)
 		}
 	}
 
@@ -60,11 +53,11 @@ func (l *Lexer) NextToken() *Token {
 }
 
 func (l *Lexer) readIdentifier() string {
-	start := l.position
+	position := l.position
 	for isLetter(l.ch) {
 		l.readChar()
 	}
-	return l.input[start:l.position]
+	return l.input[position:l.position]
 }
 
 func (l *Lexer) skipWhitespace() {

@@ -6,7 +6,7 @@ import (
 )
 
 func isLetter(ch byte) bool {
-	return unicode.IsLetter(rune(ch)) || unicode.IsDigit(rune(ch)) || ch == '_'
+	return unicode.IsLetter(rune(ch))
 }
 
 func lookupIdent(ident string) TokenType {
