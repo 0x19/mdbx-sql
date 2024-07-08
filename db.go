@@ -11,13 +11,18 @@ type Db struct {
 	dbi mdbx.DBI
 }
 
-func NewDb(ctx context.Context, path string) (*Db, error) {
+func NewDb(ctx context.Context, path string, maxDBs uint64) (*Db, error) {
 	env, err := mdbx.NewEnv()
 	if err != nil {
 		return nil, err
 	}
 
 	err = env.SetGeometry(-1, -1, 1024*1024*1024*1024, -1, -1, 4096)
+	if err != nil {
+		return nil, err
+	}
+
+	err = env.SetOption(mdbx.OptMaxDB, maxDBs)
 	if err != nil {
 		return nil, err
 	}
